@@ -44,25 +44,9 @@ for(let stringEntry of entryList){
     let record1,record2;
 
     // first NS
-    try{
-        record1 = await Deno.resolveDns(entry.name, entry.type, {
-            nameServer: { ipAddr: ns1Ip },
-        });
-        record1 = JSON.stringify(record1.sort());
-    }
-    catch(err){
-        record1 = err.message;
-    }
+        record1 = await getDns(entry,ns1Ip);
     // second NS
-    try{
-        record2 = await Deno.resolveDns(entry.name, entry.type, {
-            nameServer: { ipAddr: ns2Ip },
-        });
-        record2 = JSON.stringify(record2.sort());
-    }
-    catch(err){
-        record2 = err.message;
-    }
+        record2 = await getDns(entry,ns2Ip);
 
     // check
     if(record1 != record2){
@@ -70,6 +54,23 @@ for(let stringEntry of entryList){
         console.log(ns1Name,"\t",record1);
         console.log(ns2Name,"\t",record2,"\n");
     }
-    
+}
 
+async function getDns(entry,nsIp){
+    let record;
+    try{
+        record = await Deno.resolveDns(entry.name, entry.type, {
+            nameServer: { ipAddr: nsIp },
+        });
+        if(entry.type == "MX"){
+            record = record.sort((a, b) => (a.exchange < b.exchange ? -1 : 1));
+        } else{
+            record = record.sort();
+        }
+        record = JSON.stringify(record);
+    }
+    catch(err){
+        record = err.message;
+    }
+    return record;
 }
